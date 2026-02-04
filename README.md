@@ -34,4 +34,3 @@ Optional flags:
 - `--channel-format` `slash` or `colon`
 - `--max-messages` stop after N trade messages
 - `--duration-secs` stop after N seconds
-- `--file` scan a JSONL capture file instead of live websocket

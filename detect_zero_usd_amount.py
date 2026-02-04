@@ -4,7 +4,6 @@ import asyncio
 import json
 import time
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 from typing import Any, Dict, List
 
 MARKETS = [2050, 2049, 2053, 1]
@@ -37,11 +36,6 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=60,
         help="Max duration to run (seconds)",
-    )
-    parser.add_argument(
-        "--file",
-        default=None,
-        help="Optional JSONL file to scan instead of live websocket",
     )
     return parser.parse_args()
 
@@ -87,36 +81,6 @@ def log_trade(trade: Dict[str, Any]):
         f"size={trade.get('size')}",
         f"price={trade.get('price')}",
     )
-
-
-def scan_file(path: str):
-    file_path = Path(path)
-    if not file_path.exists():
-        raise SystemExit(f"missing {file_path}")
-    hits = 0
-    lines = 0
-    for line in file_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        lines += 1
-        try:
-            rec = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        msg_text = rec.get("message")
-        if not msg_text:
-            continue
-        for trade in iter_trades_from_message(msg_text):
-            usd_amount = parse_decimal(trade.get("usd_amount"))
-            if usd_amount is None or usd_amount != 0:
-                continue
-            size_val = parse_decimal(trade.get("size"))
-            price_val = parse_decimal(trade.get("price"))
-            if size_val in (None, 0) or price_val in (None, 0):
-                continue
-            hits += 1
-            log_trade(trade)
-    print(f"scanned_lines={lines} hits={hits}")
 
 
 async def run_live(args: argparse.Namespace):
@@ -207,9 +171,6 @@ async def run_live(args: argparse.Namespace):
 
 def main():
     args = parse_args()
-    if args.file:
-        scan_file(args.file)
-        return
     asyncio.run(run_live(args))
 
 
